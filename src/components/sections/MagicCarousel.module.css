@@ -1,0 +1,460 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   MagicCarousel — WebGL2 particle-scatter portfolio carousel.
+   Ported from magic_crousal.html with REA tokens substituted in.
+
+   Token map (original → REA):
+     --c-yellow → var(--color-paper) "#F5F1EA"
+     --c-black  → var(--color-ink)   "#151515"
+     --c-grey   → var(--color-mute)
+     --c-brown  → var(--color-gold-warm)
+     --font-t-1 / --font-t-2 → var(--font-display)  (Playfair)
+     --font-b-regular / --font-b-medium → var(--font-body) (Inter)
+
+   Class-name rename: original used kebab-case + `-active` modifiers; CSS
+   modules use camelCase locally and `.active` as a co-class.
+   ───────────────────────────────────────────────────────────────────── */
+
+.cParticles {
+  --c-paper-rgb: 245, 241, 234;
+  --c-ink-rgb:   21, 20, 21;
+  --c-mute-rgb:  107, 98, 88;
+
+  --f-cubic:    cubic-bezier(0.35, 0.35, 0, 1);
+  --f-cubic-in: cubic-bezier(0.69, 0, 0, 1);
+  --f-fast:     cubic-bezier(0.2, 0.75, 0.35, 1);
+  --f-smooth:   cubic-bezier(0.5, 0, 0.3, 1);
+
+  --type-step: 1.25;
+  --p:  1rem;
+  --m:  calc(var(--p) / var(--type-step));
+  --mm: calc(var(--m) / var(--type-step));
+  --h6: calc(var(--p)  * var(--type-step));
+  --h5: calc(var(--h6) * var(--type-step));
+  --h4: calc(var(--h5) * var(--type-step));
+  --h3: calc(var(--h4) * var(--type-step));
+  --h2: calc(var(--h3) * var(--type-step));
+  --h1: calc(var(--h2) * var(--type-step));
+  --h0: calc(var(--h1) * var(--type-step));
+  /* Cap the hero display text so a single-line title fits in viewport for
+     every project name in the rotation, including the longest ("BNG Hills
+     Luxury Villa", "Oil & Gas Headquarters", "Pathos Gold Boutique"). */
+  --large: clamp(36px, 5.5vw, 96px);
+
+  --g-columns: 6;
+  --g-gap:    var(--p);
+  --g-margin: var(--g-gap);
+
+  background-color: transparent;
+  height: calc(1vh * 800);
+  pointer-events: none;
+  position: relative;
+  color: var(--color-ink);
+}
+@media (min-width: 1024px) {
+  .cParticles { --g-columns: 12; --g-margin: calc(var(--g-gap) * 2); }
+}
+
+.stick {
+  background-color: transparent;
+  display: grid;
+  /* Explicit single-cell grid: every child uses grid-area: 1/1 to overlap
+     inside this one cell. minmax(0, 1fr) constrains the cell to the
+     container width (100vw) instead of auto-expanding to fit the widest
+     child — which is what was pushing the title + info row off-screen
+     on long project names. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 100vh;
+  width: 100%;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  overflow: hidden;
+}
+
+.stick::before {
+  content: "";
+  display: block;
+  position: absolute;
+  pointer-events: none;
+  background-image: linear-gradient(
+    to top,
+    var(--color-paper) var(--large),
+    rgba(var(--c-paper-rgb), 0) 100%
+  );
+  background-position: 50%;
+  background-repeat: no-repeat;
+  background-size: 100%;
+  height: calc(var(--large) * 4);
+  inset: auto 0 0 0;
+  transform-origin: 50% 100%;
+  transition: scale 1.5s var(--f-cubic);
+  z-index: 10;
+}
+@media (min-width: 1024px) {
+  .stick::before { height: calc(var(--large) * 2); }
+}
+
+.stick::after {
+  content: "";
+  display: block;
+  position: absolute;
+  pointer-events: none;
+  background-image: linear-gradient(
+    0deg,
+    rgba(var(--c-ink-rgb), 0),
+    rgba(var(--c-ink-rgb), 0.5) 50%,
+    rgba(var(--c-ink-rgb), 0)
+  );
+  inset: 0;
+  opacity: 1;
+  transition: opacity 3s var(--f-cubic);
+  z-index: 5;
+}
+
+.scatterContainer {
+  position: absolute;
+  inset: 0;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1;
+  background: var(--color-paper);
+}
+.scatterContainer .bgImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.8s var(--f-cubic);
+  z-index: 1;
+}
+.scatterContainer.glFailed .bgImg.active {
+  opacity: 1;
+}
+.webglCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 2;
+  background: var(--color-paper);
+}
+.scatterContainer.glFailed .webglCanvas {
+  display: none;
+}
+.scatterContainer::after {
+  content: "";
+  display: block;
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    to top,
+    var(--color-paper) 0%,
+    rgba(var(--c-paper-rgb), 0) 35%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Numbered path */
+.path {
+  align-items: center;
+  align-self: center;
+  color: var(--color-paper);
+  display: flex;
+  grid-area: 1/1;
+  justify-content: space-around;
+  margin-left:  var(--g-margin);
+  margin-right: var(--g-margin);
+  pointer-events: none;
+  position: relative;
+  transform: translateZ(0);
+  z-index: 20;
+  font-family: var(--font-display);
+}
+.path > .line {
+  background-color: rgba(var(--c-ink-rgb), 0.2);
+  inset: auto 0 auto 0;
+  opacity: 1;
+  position: absolute;
+  height: 1px;
+}
+.path > .line::before {
+  content: "";
+  display: block;
+  height: 1px;
+  width: 100%;
+  background-color: rgba(var(--c-paper-rgb), 0.6);
+  scale: var(--smart-progress, 0) 1;
+  transform-origin: 0 50%;
+  transition: scale 0.15s linear;
+}
+.path .i {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  height: var(--p);
+  width:  var(--p);
+  padding: var(--g-gap);
+  position: relative;
+  scale: 1;
+  opacity: 1;
+  font-size: var(--h5);
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  line-height: 1;
+  transition:
+    scale 1.5s var(--f-cubic),
+    opacity 1.5s var(--f-cubic);
+}
+@media (min-width: 1024px) {
+  .path .i {
+    height: var(--h3);
+    width: var(--h3);
+    padding: calc(var(--g-gap) * 2);
+    font-size: var(--h4);
+  }
+}
+.path .i::before,
+.path .i::after {
+  content: "";
+  display: block;
+  position: absolute;
+  border: 1px solid rgba(var(--c-paper-rgb), 0.2);
+  border-radius: 50%;
+  inset: 0;
+  padding: 50% 0;
+  width: 100%;
+  scale: 0.5;
+  transition:
+    scale 1.5s var(--f-cubic),
+    border 1.5s var(--f-cubic),
+    background-color 1.5s var(--f-cubic);
+  z-index: 20;
+}
+@media (min-width: 1024px) {
+  .path .i::before,
+  .path .i::after { scale: 0.8; }
+}
+.path .i::after {
+  background-image: radial-gradient(
+    circle,
+    rgba(var(--c-ink-rgb), 0.4),
+    rgba(var(--c-ink-rgb), 0) 60%
+  );
+  border: 1px solid rgba(var(--c-paper-rgb), 0.1);
+  padding: 60% 0;
+  width: 120%;
+  left: -10%;
+  z-index: 15;
+}
+.path .i > span {
+  color: var(--color-paper);
+  display: flex;
+  position: relative;
+  text-shadow:
+    0 0 0 var(--color-paper),
+    0 0.4rem 0.8rem var(--color-ink);
+  transition:
+    color 1.5s var(--f-cubic),
+    text-shadow 1.5s var(--f-cubic);
+  z-index: 30;
+}
+.path .i.active::before {
+  background-color: rgba(var(--c-ink-rgb), 0.2);
+  border: 1px solid rgba(var(--c-paper-rgb), 0.4);
+  scale: 1;
+}
+.path .i.active::after {
+  background-color: rgba(var(--c-ink-rgb), 0.1);
+  border: 1px solid rgba(var(--c-paper-rgb), 0.2);
+  scale: 1;
+}
+.path .i.active > span {
+  color: #fff;
+  text-shadow:
+    0 0 0.8rem var(--color-paper),
+    0 0.4rem 0.8rem var(--color-ink);
+}
+
+/* Project-name label above each numbered dot. Specificity (0,3,0)
+   beats `.path .i > span` (0,2,1), so the label overrides display/
+   position from the inherited number-span styles. */
+.path .i > .iLabel {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: block;
+  width: max-content;
+  max-width: 13ch;
+  font-family: var(--font-body);
+  font-size: clamp(8px, 0.65vw, 10px);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--color-paper);
+  text-align: center;
+  line-height: 1.35;
+  opacity: 0.55;
+  transition:
+    opacity 0.5s var(--f-cubic),
+    color 0.5s var(--f-cubic);
+  pointer-events: none;
+  white-space: normal;
+  text-shadow:
+    0 2px 8px rgba(var(--c-ink-rgb), 0.55),
+    0 0 12px rgba(var(--c-ink-rgb), 0.35);
+  z-index: 30;
+}
+
+.path .i.active > .iLabel {
+  opacity: 1;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  /* Hide labels on small screens — dots too tight, labels would overlap. */
+  .path .i > .iLabel {
+    display: none;
+  }
+}
+
+/* Bottom info area */
+.contentWrap {
+  align-self: end;
+  background-color: transparent;
+  grid-area: 1/1;
+  justify-self: stretch;
+  display: grid;
+  grid-template-columns: repeat(var(--g-columns), 1fr);
+  gap: var(--g-gap);
+  margin: 0 var(--g-margin) var(--h4);
+  opacity: 1;
+  pointer-events: none;
+  position: relative;
+  z-index: 20;
+}
+.placeName {
+  grid-column: 1 / -1;
+  display: grid;
+  justify-content: center;
+  margin-bottom: var(--p);
+  place-items: center;
+  position: relative;
+  color: var(--color-ink);
+  text-align: center;
+  font-family: var(--font-display);
+  line-height: 0.95;
+}
+@media (min-width: 1024px) {
+  .placeName { margin-bottom: var(--h3); }
+}
+.placeName > .place {
+  grid-area: 1/1;
+  /* Single-line block so the title baseline is at the SAME vertical
+     position for every slide — short names ("Pathos") and long names
+     ("BNG Hills Luxury Villa") both render on one line. The chars inside
+     each have their own per-char transforms via .ch. */
+  display: inline-block;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  font-size: var(--large);
+  letter-spacing: -0.025em;
+  font-weight: 400;
+  line-height: 1;
+  /* Allow chars to extend slightly past container edges without wrapping
+     the parent grid cell — overflow is handled by .stick overflow:hidden. */
+  max-width: none;
+}
+.placeName > .place .ch {
+  display: inline-flex;
+  filter: blur(0.05em);
+  opacity: 0;
+  scale: 2;
+  transform: translateZ(0) skew(15deg, 30deg);
+  transition:
+    opacity 1.5s var(--f-fast),
+    scale 1.5s var(--f-fast),
+    translate 1.5s var(--f-fast),
+    transform 1.5s var(--f-fast),
+    filter 1.5s var(--f-fast);
+  transition-delay: calc(var(--char-random, 0) * 75ms);
+  translate: calc(var(--dx, 0.25) * 1em) calc(var(--dy, 1) * 1em);
+  margin: -0.25em -0.05em;
+  padding: 0.25em 0.05em;
+  will-change: contents;
+}
+.placeName > .place.active { pointer-events: all; }
+.placeName > .place.active .ch {
+  filter: blur(0);
+  opacity: 1;
+  scale: 1;
+  transform: translateZ(0) skew(0deg, 0deg);
+  translate: 0 0;
+}
+
+.info {
+  display: block;
+  text-align: left;
+  color: var(--color-ink);
+  transition:
+    opacity 0.6s var(--f-cubic),
+    translate 1.5s var(--f-cubic);
+  font-family: var(--font-body);
+  font-size: clamp(13px, 0.95vw, 16px);
+  line-height: 1.55;
+  letter-spacing: 0.005em;
+}
+.info.leaving  { opacity: 0; translate: 0 -1em; }
+.info.entering { opacity: 0; translate: 0  1em; }
+
+/* Status (category) — small uppercase tag */
+.status {
+  grid-column: 1 / span 2;
+  font-size: clamp(10px, 0.7vw, 12px);
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-weight: 500;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+/* Caption (blurb) — primary body. Clamped to 3 lines so the row 2
+   height stays constant across slides (some captions are 100 chars,
+   others 160+); otherwise the .contentWrap height varies and shifts
+   the title's Y position between slides. */
+.caption {
+  grid-column: 1 / span 4;
+  font-weight: 400;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(1.55em * 3);
+}
+/* Usage (location) — secondary body */
+.usage {
+  grid-column: 4 / span 3;
+  font-weight: 400;
+  opacity: 0.85;
+}
+/* Object (year) — emphasised display */
+.object {
+  grid-column: 1 / -1;
+  margin-top: var(--mm);
+  font-family: var(--font-display);
+  font-size: clamp(22px, 1.8vw, 36px);
+  letter-spacing: -0.015em;
+  line-height: 1;
+  font-weight: 400;
+}
+@media (min-width: 1024px) {
+  .status  { grid-column: 1  / span 2; }
+  .caption { grid-column: 3  / span 3; }
+  .usage   { grid-column: 7  / span 3; }
+  .object  { grid-column: 10 / span 3; text-align: right; margin-top: 0; }
+}

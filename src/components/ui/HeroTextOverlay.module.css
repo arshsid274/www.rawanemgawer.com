@@ -1,0 +1,89 @@
+/* Springs-style hero overlay.
+   Sizing mirrors springs' .h1 (font-size: scale-text-rem * 10 ≈ 10rem; line-height: 0.95em;
+   letter-spacing: -0.02em) and .text-c1 (font-size: scale-text-rem * 1.2; line-height: 1.5em;
+   letter-spacing: 0.08em; uppercase). scale-text-rem follows springs' fluid scale:
+   max(0.84rem, min(1rem, 0.84rem + 1.6*((100vw - 720px) / 480))) — clamps roughly 0.84–1rem
+   between 720px and 1200px viewports. */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  color: #0a0a0a;
+  --scale-text-rem: clamp(
+    0.84rem,
+    calc(0.84rem + 1.6 * ((100vw - 720px) / 480)),
+    1rem
+  );
+}
+
+.wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: clamp(7vh, 10vh, 14vh) clamp(1.25rem, 5vw, 4.5rem) 0;
+  will-change: transform, opacity;
+}
+
+.eyebrow {
+  display: block;
+  font-size: calc(var(--scale-text-rem) * 1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 1.25rem;
+  font-weight: 500;
+  font-style: italic;
+  line-height: 1.5em;
+  color: #0a0a0a;
+}
+
+.headline {
+  margin: 0;
+  font-weight: 400;
+  font-size: calc(var(--scale-text-rem) * 10);
+  line-height: 0.95em;
+  letter-spacing: -0.02em;
+  color: #0a0a0a;
+}
+
+.headline em {
+  font-style: italic;
+}
+
+.subline {
+  margin: clamp(2.5rem, 8vh, 5rem) 0 0 auto;
+  max-width: 32rem;
+  font-size: calc(var(--scale-text-rem) * 1.2);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.5em;
+  color: #0a0a0a;
+  text-align: right;
+}
+
+/* Mobile / narrow tablet: springs uses smaller scale (3.6× at the small end).
+   Subline drops to scale * 1.4 with tighter line-height. */
+@media (max-width: 768px) {
+  .overlay {
+    --scale-text-rem: 0.84rem;
+  }
+  .wrap {
+    padding-top: 12vh;
+  }
+  .headline {
+    font-size: calc(var(--scale-text-rem) * 3.6);
+    line-height: 0.97em;
+  }
+  .subline {
+    margin-right: 0;
+    margin-left: 0;
+    text-align: left;
+    max-width: 22rem;
+    font-size: calc(var(--scale-text-rem) * 1.4);
+    line-height: 1.3em;
+  }
+}
