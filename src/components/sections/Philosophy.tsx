@@ -148,7 +148,10 @@ export function Philosophy() {
             fill
             sizes="100vw"
             className="object-cover"
-            priority
+            // No priority: this section sits ~1000vh below the fold behind the
+            // hero sequence. priority injected a <link rel="preload"> that
+            // competed with the hero's own first paint.
+            loading="lazy"
           />
         </motion.div>
 

@@ -120,11 +120,26 @@ export default function AircraftScroll() {
     video.addEventListener("loadedmetadata", onMeta);
     if (video.readyState >= 1) onMeta();
 
-    // Some browsers will not decode or seek until the element is kicked once.
-    // play() returns undefined on older engines, so guard before chaining.
-    const kick = video.play();
-    if (kick && typeof kick.then === "function") {
-      kick.then(() => video.pause()).catch(() => {});
+    // The markup ships preload="none" so the ~7 MB hero video never competes
+    // with LCP. Once the browser is idle (first paint is done, the poster is
+    // up), switch to eager buffering and kick the element — some browsers
+    // will not decode or seek until play() has been called once. play()
+    // returns undefined on older engines, so guard before chaining.
+    let idleHandle = 0;
+    const startBuffering = () => {
+      video.preload = "auto";
+      video.load();
+      const kick = video.play();
+      if (kick && typeof kick.then === "function") {
+        kick.then(() => video.pause()).catch(() => {});
+      }
+    };
+
+    const ric = window.requestIdleCallback;
+    if (typeof ric === "function") {
+      idleHandle = ric(startBuffering, { timeout: 2000 });
+    } else {
+      idleHandle = window.setTimeout(startBuffering, 200);
     }
 
     const render = () => {
@@ -159,6 +174,11 @@ export default function AircraftScroll() {
     return () => {
       video.removeEventListener("loadedmetadata", onMeta);
       cancelAnimationFrame(animationId);
+      if (typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleHandle);
+      } else {
+        window.clearTimeout(idleHandle);
+      }
     };
   }, []);
 
@@ -263,6 +283,16 @@ export default function AircraftScroll() {
       className="relative z-10"
       style={{ height: "1000vh" }}
     >
+      {/* The poster is the hero's LCP element and the video ships
+          preload="none", so this is the one thing worth fetching eagerly.
+          React hoists this <link> into <head>. */}
+      <link
+        rel="preload"
+        as="image"
+        href="/video/sequence-1-poster.avif"
+        fetchPriority="high"
+      />
+
       <div className="sticky top-0 h-screen w-full overflow-hidden bg-black">
         {/* Layer 1: Video — scrubs during CANVAS, holds last frame after.
             object-cover reproduces the old drawImage cover math exactly. */}
@@ -273,9 +303,22 @@ export default function AircraftScroll() {
           poster="/video/sequence-1-poster.avif"
           muted
           playsInline
-          preload="auto"
+          preload="none"
           tabIndex={-1}
         >
+          {/* Narrow viewports take the 720p cuts. media is evaluated once at
+              load time, which is fine here: the hero is full-bleed and the
+              source set never needs to change mid-session. */}
+          <source
+            src="/video/sequence-1-720.webm"
+            type="video/webm"
+            media="(max-width: 820px)"
+          />
+          <source
+            src="/video/sequence-1-720.mp4"
+            type="video/mp4"
+            media="(max-width: 820px)"
+          />
           <source src="/video/sequence-1.webm" type="video/webm" />
           <source src="/video/sequence-1.mp4" type="video/mp4" />
         </video>
