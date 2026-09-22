@@ -93,7 +93,7 @@ export const SERVICES: Service[] = [
       "Urban Infill Projects",
       "Garden Studios",
     ],
-    image: "/new_images/residential design.png",
+    image: "/new_images/residential design.avif",
   },
   {
     number: "02",
@@ -108,7 +108,7 @@ export const SERVICES: Service[] = [
       "Showrooms",
       "Hospitality Design",
     ],
-    image: "/new_images/commercial design.png",
+    image: "/new_images/commercial design.avif",
   },
   {
     number: "03",
@@ -123,7 +123,7 @@ export const SERVICES: Service[] = [
       "Custom Millwork Design",
       "Material & Finish Selection",
     ],
-    image: "/new_images/work place design.png",
+    image: "/new_images/work place design.avif",
   },
   {
     number: "04",
@@ -138,7 +138,7 @@ export const SERVICES: Service[] = [
       "Adaptive Reuse",
       "Building Upgrades",
     ],
-    image: "/new_images/health care design.png",
+    image: "/new_images/health care design.avif",
   },
 ];
 
@@ -190,7 +190,7 @@ export const PROJECTS: Project[] = [
     category: "Aviation",
     blurb:
       "A large-scale interior design aviation project designed to enhance passenger experience through efficient planning, clear circulation, and modern architecture.",
-    image: "/new_images/Airport_Landscape.png",
+    image: "/new_images/Airport_Landscape.avif",
   },
   {
     slug: "isle-of-dog-tower",
@@ -200,7 +200,7 @@ export const PROJECTS: Project[] = [
     category: "Commercial",
     blurb:
       "A high-rise commercial development balancing a distinctive architectural identity with refined urban presence in central London.",
-    image: "/new_images/isleof_portraid.png",
+    image: "/new_images/isleof_portraid.avif",
   },
   {
     slug: "oil-gas-headquarters",
@@ -210,7 +210,7 @@ export const PROJECTS: Project[] = [
     category: "Commercial",
     blurb:
       "A corporate headquarters designed to reflect strength and innovation, combining functional workspaces with a bold, professional presence.",
-    image: "/new_images/oil n gas1.png",
+    image: "/new_images/oil n gas1.avif",
   },
   {
     slug: "aviva-hospital",
@@ -220,7 +220,7 @@ export const PROJECTS: Project[] = [
     category: "Healthcare",
     blurb:
       "A contemporary maternal healthcare facility focused on patient comfort, operational efficiency, and advanced medical functionality.",
-    image: "/new_images/aviva maternal hospital.png",
+    image: "/new_images/aviva maternal hospital.avif",
   },
   {
     slug: "hala-hypermarket",
@@ -230,7 +230,7 @@ export const PROJECTS: Project[] = [
     category: "Commercial",
     blurb:
       "A vibrant retail environment designed to enhance customer flow, visibility, and overall shopping experience.",
-    image: "/new_images/hala final.png",
+    image: "/new_images/hala final.avif",
   },
   {
     slug: "bng-hills-villa",
@@ -240,7 +240,7 @@ export const PROJECTS: Project[] = [
     category: "Residential",
     blurb:
       "A modern residential villa combining clean architectural lines with comfortable, high-end living spaces.",
-    image: "/new_images/villa.png",
+    image: "/new_images/villa.avif",
   },
   {
     slug: "pathos-gold-boutique",
@@ -250,7 +250,7 @@ export const PROJECTS: Project[] = [
     category: "Commercial",
     blurb:
       "A refined luxury retail space that highlights elegance and exclusivity, creating a sophisticated setting for high-end jewelry display.",
-    image: "/new_images/pathos.png",
+    image: "/new_images/pathos.avif",
   },
 ];
 

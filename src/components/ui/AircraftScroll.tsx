@@ -11,7 +11,6 @@ import {
   cubicBezier,
   type MotionValue,
 } from "framer-motion";
-import { useImagePreloader } from "@/hooks/useImagePreloader";
 import HeroTextOverlay from "./HeroTextOverlay";
 
 /**
@@ -96,72 +95,41 @@ const SLIDES: Slide[] = [
 ];
 
 export default function AircraftScroll() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion() ?? false;
 
-  // ── Fast first paint: draw a real frame before the preloader resolves so
-  // the canvas isn't pure black under the (black) hero overlay text.
+  // ── Scroll-driven video scrubbing. Replaces the old 230-frame canvas
+  // sequence: the browser now decodes on demand instead of us holding 230
+  // decoded 1920x1080 bitmaps resident, and the payload drops ~88%.
+  //
+  // The video is never played, only seeked. It is muted + playsInline so iOS
+  // permits programmatic seeking without a user gesture, and it is encoded
+  // with a keyframe every 10 frames so each seek lands cheaply.
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const img = new window.Image();
-    img.decoding = "async";
-    img.onload = () => {
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      const scale = Math.max(
-        canvas.width / img.width,
-        canvas.height / img.height,
-      );
-      const x = canvas.width / 2 - (img.width / 2) * scale;
-      const y = canvas.height / 2 - (img.height / 2) * scale;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-    };
-    img.src = "/sequence-1/011.webp";
-  }, []);
-
-  const { images, loaded } = useImagePreloader("/sequence-1", 240);
-
-  // ── Canvas render loop. Maps scroll → frame within the CANVAS phase, then
-  // holds the last frame for the slider phase. Diffs index to skip redraws.
-  useEffect(() => {
-    if (!loaded || images.length === 0) return;
+    const video = videoRef.current;
+    if (!video) return;
 
     let animationId: number;
-    let lastDrawnFrame = -1;
+    let lastTarget = -1;
+    let duration = 0;
 
-    const drawImage = (img: HTMLImageElement) => {
-      const canvas = canvasRef.current;
-      const ctx = canvas?.getContext("2d");
-      if (!ctx || !canvas) return;
-      const scale = Math.max(
-        canvas.width / img.width,
-        canvas.height / img.height,
-      );
-      const x = canvas.width / 2 - (img.width / 2) * scale;
-      const y = canvas.height / 2 - (img.height / 2) * scale;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+    const onMeta = () => {
+      duration = video.duration || 0;
     };
+    video.addEventListener("loadedmetadata", onMeta);
+    if (video.readyState >= 1) onMeta();
 
-    const handleResize = () => {
-      const canvas = canvasRef.current;
-      if (canvas) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        lastDrawnFrame = -1; // force redraw at new dimensions
-      }
-    };
-    window.addEventListener("resize", handleResize, { passive: true });
+    // Some browsers will not decode or seek until the element is kicked once.
+    // play() returns undefined on older engines, so guard before chaining.
+    const kick = video.play();
+    if (kick && typeof kick.then === "function") {
+      kick.then(() => video.pause()).catch(() => {});
+    }
 
     const render = () => {
-      const canvas = canvasRef.current;
       const container = containerRef.current;
-      if (!canvas || !container) {
+      if (!container || duration <= 0) {
         animationId = requestAnimationFrame(render);
         return;
       }
@@ -169,21 +137,18 @@ export default function AircraftScroll() {
       const rect = container.getBoundingClientRect();
       const scrollable = rect.height - window.innerHeight;
       const scrollProgress =
-        scrollable > 0
-          ? Math.max(0, Math.min(1, -rect.top / scrollable))
-          : 0;
+        scrollable > 0 ? Math.max(0, Math.min(1, -rect.top / scrollable)) : 0;
 
-      // Clamp at CANVAS_END so the canvas freezes on the last frame for the
-      // entire slider phase.
+      // Clamp at CANVAS_END so the video holds its last frame for the whole
+      // slider phase - same behaviour as the old canvas freeze.
       const canvasProgress = Math.min(1, scrollProgress / CANVAS_END);
-      const frame = Math.floor(canvasProgress * (images.length - 1));
+      const target = canvasProgress * duration;
 
-      if (frame !== lastDrawnFrame) {
-        const img = images[frame];
-        if (img) {
-          drawImage(img);
-          lastDrawnFrame = frame;
-        }
+      // Only seek on a meaningful delta. Rewriting currentTime every frame
+      // starves the decoder and shows up as judder.
+      if (Math.abs(target - lastTarget) > 1 / 60 && !video.seeking) {
+        video.currentTime = target;
+        lastTarget = target;
       }
 
       animationId = requestAnimationFrame(render);
@@ -192,10 +157,10 @@ export default function AircraftScroll() {
     animationId = requestAnimationFrame(render);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      video.removeEventListener("loadedmetadata", onMeta);
       cancelAnimationFrame(animationId);
     };
-  }, [loaded, images]);
+  }, []);
 
   // ── Scroll progress for the slider overlay. Goes 0 → 1 over the slider
   // phase (scroll progress 0.6 → 1.0); clamped before/after.
@@ -299,12 +264,21 @@ export default function AircraftScroll() {
       style={{ height: "1000vh" }}
     >
       <div className="sticky top-0 h-screen w-full overflow-hidden bg-black">
-        {/* Layer 1: Canvas — plays frames during CANVAS, holds last frame after */}
-        <canvas
-          ref={canvasRef}
+        {/* Layer 1: Video — scrubs during CANVAS, holds last frame after.
+            object-cover reproduces the old drawImage cover math exactly. */}
+        <video
+          ref={videoRef}
           aria-label="Architectural design transformation animation"
-          className="absolute inset-0 w-full h-full"
-        />
+          className="absolute inset-0 w-full h-full object-cover"
+          poster="/video/sequence-1-poster.avif"
+          muted
+          playsInline
+          preload="auto"
+          tabIndex={-1}
+        >
+          <source src="/video/sequence-1.webm" type="video/webm" />
+          <source src="/video/sequence-1.mp4" type="video/mp4" />
+        </video>
 
         {/* Layer 2: Hero text overlay — fades up & out early in CANVAS phase */}
         <HeroTextOverlay containerRef={containerRef} />

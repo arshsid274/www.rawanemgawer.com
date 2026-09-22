@@ -46,7 +46,7 @@ export function Navbar() {
           >
             <span className="relative h-9 w-9 md:h-10 md:w-10 overflow-hidden rounded-full bg-white/10">
               <Image
-                src="/new_images/Logo no bg.png"
+                src="/new_images/Logo no bg.avif"
                 alt=""
                 fill
                 sizes="40px"

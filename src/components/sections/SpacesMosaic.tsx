@@ -20,49 +20,49 @@ const TILES: Tile[] = [
   {
     label: "Natural Birth Suite",
     caption: "Aviva Hospital — Benghazi",
-    image: "/new_images/natural birth area.png",
+    image: "/new_images/natural birth area.avif",
     span: "wide",
   },
   {
     label: "Surgery Area",
     caption: "Aviva Hospital — Benghazi",
-    image: "/new_images/surgery area render.png",
+    image: "/new_images/surgery area render.avif",
   },
   {
     label: "VIP Recovery Room",
     caption: "Aviva Hospital — Benghazi",
-    image: "/new_images/VIP recovery room.png",
+    image: "/new_images/VIP recovery room.avif",
   },
   {
     label: "Sky Pool",
     caption: "BNG Hills Villa — Benghazi",
-    image: "/new_images/sky pool render.png",
+    image: "/new_images/sky pool render.avif",
     span: "tall",
   },
   {
     label: "Living Room",
     caption: "BNG Hills Villa — Benghazi",
-    image: "/new_images/living_room.png",
+    image: "/new_images/living_room.avif",
   },
   {
     label: "Terrace",
     caption: "BNG Hills Villa — Benghazi",
-    image: "/new_images/terrace design.png",
+    image: "/new_images/terrace design.avif",
   },
   {
     label: "Conference Room",
     caption: "Oil & Gas Headquarters — Jebal Ali",
-    image: "/new_images/conference room 1.png",
+    image: "/new_images/conference room 1.avif",
   },
   {
     label: "Meeting Room",
     caption: "Oil & Gas Headquarters — Jebal Ali",
-    image: "/new_images/meeting room.png",
+    image: "/new_images/meeting room.avif",
   },
   {
     label: "Departure Hall",
     caption: "Khalifa Airport — Zwatina",
-    image: "/new_images/Departure_waiting_Hall.png",
+    image: "/new_images/Departure_waiting_Hall.avif",
   },
 ];
 

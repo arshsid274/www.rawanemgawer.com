@@ -67,7 +67,7 @@ export function TeamHero() {
             className="relative aspect-[16/10] md:aspect-[5/4] overflow-hidden bg-[var(--color-soft)]"
           >
             <Image
-              src="/new_images/Teams.png"
+              src="/new_images/Teams.avif"
               alt="Rawan Emgawer Architect — the studio team"
               fill
               sizes="(max-width: 768px) 100vw, 60vw"
@@ -101,7 +101,7 @@ export function TeamHero() {
             className="relative aspect-[3/4] md:aspect-auto overflow-hidden bg-[var(--color-soft)]"
           >
             <Image
-              src="/new_images/peopel_discussing.png"
+              src="/new_images/peopel_discussing.avif"
               alt="REA team discussing a project"
               fill
               sizes="(max-width: 768px) 100vw, 38vw"

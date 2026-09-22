@@ -18,32 +18,32 @@ interface Sector {
 const SECTORS: Sector[] = [
   {
     label: "Aviation",
-    image: "/new_images/aviation design.png",
+    image: "/new_images/aviation design.avif",
     blurb: "Airport interiors and transport-scale environments.",
   },
   {
     label: "Healthcare",
-    image: "/new_images/health care design.png",
+    image: "/new_images/health care design.avif",
     blurb: "Hospitals and clinical campuses, patient-first.",
   },
   {
     label: "Commercial",
-    image: "/new_images/commercial design.png",
+    image: "/new_images/commercial design.avif",
     blurb: "Corporate HQs, retail, and hospitality.",
   },
   {
     label: "Residential",
-    image: "/new_images/residential design.png",
+    image: "/new_images/residential design.avif",
     blurb: "Bespoke villas and refined private homes.",
   },
   {
     label: "Educational",
-    image: "/new_images/educational design.png",
+    image: "/new_images/educational design.avif",
     blurb: "Schools and learning facilities, future-shaped.",
   },
   {
     label: "Workplace",
-    image: "/new_images/work place design.png",
+    image: "/new_images/work place design.avif",
     blurb: "Considered offices and creative studios.",
   },
 ];

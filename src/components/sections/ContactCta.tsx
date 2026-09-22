@@ -103,7 +103,7 @@ export function ContactCta() {
             className="absolute inset-0 will-change-[filter]"
           >
             <Image
-              src="/new_images/Teams.png"
+              src="/new_images/Teams.avif"
               alt=""
               fill
               priority={false}

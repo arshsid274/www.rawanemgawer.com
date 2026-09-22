@@ -12,7 +12,7 @@ export function Footer() {
             <Link href="/" className="flex items-center gap-3 group">
               <span className="relative h-11 w-11 overflow-hidden rounded-full bg-white/10">
                 <Image
-                  src="/new_images/Logo no bg.png"
+                  src="/new_images/Logo no bg.avif"
                   alt=""
                   fill
                   sizes="44px"
